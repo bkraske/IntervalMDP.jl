@@ -73,11 +73,14 @@ V, k, residual = value_iteration(problem)
 ```
 
 """
-function value_iteration(problem::Problem; callback = nothing)
+function value_iteration(problem::Problem; callback = nothing, include_T = false)
     strategy_config = whichstrategyconfig(problem)
-    V, k, res, _ = _value_iteration!(strategy_config, problem; callback = callback)
-
-    return V, k, res
+    V, k, res, _, ws = _value_iteration!(strategy_config, problem; callback = callback)
+    if include_T
+        return V, k, res, ws.del_T #Will not work for dense workspaces
+    else
+        return V, k, res
+    end
 end
 whichstrategyconfig(::Problem{S, F, <:NoStrategy}) where {S, F} = NoStrategyConfig()
 whichstrategyconfig(::Problem{S, F, <:AbstractStrategy}) where {S, F} =
@@ -140,10 +143,9 @@ function _value_iteration!(
     end
 
     postprocess_value_function!(value_function, spec)
-
     # lastdiff! uses previous to store the latest difference
     # and it is already computed from the condition in the loop
-    return value_function.current, k, value_function.previous, strategy_cache
+    return value_function.current, k, value_function.previous, strategy_cache, workspace
 end
 
 struct ValueFunction{R, A <: AbstractArray{R}}

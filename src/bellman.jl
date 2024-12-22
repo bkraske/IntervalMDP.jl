@@ -264,15 +264,19 @@ Base.@propagate_inbounds function state_action_bellman(
     used = sum_lower(prob)[jₐ]
 
     Vp_workspace = @view workspace.values_gaps[1:nnz(gapⱼ)]
+    space = @view workspace.delT[:,jₐ]
+    space .= 0.0
     for (i, (v, p)) in
         enumerate(zip(@view(V[SparseArrays.nonzeroinds(gapⱼ)]), nonzeros(gapⱼ)))
         Vp_workspace[i] = (v, p)
     end
 
     # rev=true for upper bound
-    sort!(Vp_workspace; rev = upper_bound, by = first, scratch = scratch(workspace))
-
-    return dot(V, lowerⱼ) + gap_value(Vp_workspace, used)
+    # sort!(Vp_workspace; rev = upper_bound, by = first, scratch = scratch(workspace))
+    perm_order = sortperm(Vp_workspace; rev = upper_bound, by = first)
+    Vp_workspace = Vp_workspace[perm_order]
+    perm_states = SparseArrays.nonzeroinds(gapⱼ)[perm_order]
+    return dot(V, lowerⱼ) + gap_value(Vp_workspace, used, space, perm_states)
 end
 
 Base.@propagate_inbounds function gap_value(Vp, sum_lower)
@@ -287,6 +291,25 @@ Base.@propagate_inbounds function gap_value(Vp, sum_lower)
         if remaining <= 0.0
             break
         end
+    end
+
+    return res
+end
+
+Base.@propagate_inbounds function gap_value(Vp, sum_lower, space, perm_order)
+    remaining = 1.0 - sum_lower
+    res = 0.0
+    i = 1
+    for (V, p) in Vp
+        p = min(remaining, p)
+        res += p * V
+        space[perm_order[i]] = p
+
+        remaining -= p
+        if remaining <= 0.0
+            break
+        end
+        i+=1
     end
 
     return res

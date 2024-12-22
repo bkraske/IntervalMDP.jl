@@ -81,6 +81,7 @@ struct SparseWorkspace{T <: Real}
     scratch::Vector{Tuple{T, T}}
     values_gaps::Vector{Tuple{T, T}}
     actions::Vector{T}
+    delT::SparseMatrixCSC{Float64, Int64}
 end
 
 function SparseWorkspace(p::AbstractSparseMatrix{T}, max_actions) where {T <: Real}
@@ -88,7 +89,8 @@ function SparseWorkspace(p::AbstractSparseMatrix{T}, max_actions) where {T <: Re
     scratch = Vector{Tuple{T, T}}(undef, max_nonzeros)
     values_gaps = Vector{Tuple{T, T}}(undef, max_nonzeros)
     actions = Vector{T}(undef, max_actions)
-    return SparseWorkspace(scratch, values_gaps, actions)
+    delT =  SparseMatrixCSC{Float64, Int64}(undef, size(p)...)
+    return SparseWorkspace(scratch, values_gaps, actions, delT)
 end
 
 scratch(ws::SparseWorkspace) = ws.scratch
