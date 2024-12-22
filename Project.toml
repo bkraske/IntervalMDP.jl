@@ -1,7 +1,7 @@
 name = "IntervalMDP"
 uuid = "051c988a-e73c-45a4-90ec-875cac0402c7"
 authors = ["Frederik Baymler Mathiesen <frederik@baymler.com> and contributors"]
-version = "0.3.0"
+version = "0.4.0"
 
 [deps]
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
@@ -20,7 +20,7 @@ IntervalMDPCudaExt = ["Adapt", "CUDA", "GPUArrays", "LLVM"]
 
 [compat]
 Adapt = "4"
-CUDA = "5.1.0"
+CUDA = "5.1"
 GPUArrays = "10, 11"
 JSON = "0.21.4"
 LLVM = "7, 8, 9"
