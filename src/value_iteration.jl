@@ -77,7 +77,7 @@ function value_iteration(problem::Problem; callback = nothing, include_T = false
     strategy_config = whichstrategyconfig(problem)
     V, k, res, _, ws = _value_iteration!(strategy_config, problem; callback = callback)
     if include_T
-        return V, k, res, ws.del_T #Will not work for dense workspaces
+        return V, k, res, ws.delT #Will not work for dense workspaces
     else
         return V, k, res
     end
