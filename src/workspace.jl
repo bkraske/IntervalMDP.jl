@@ -14,6 +14,9 @@ as well as the number of threads available.
 construct_workspace(mp::IntervalMarkovProcess) =
     construct_workspace(transition_prob(mp), max_actions(mp))
 
+construct_workspace(mp::IntervalMarkovProcess,includeT::Bool) =
+    construct_workspace(transition_prob(mp), max_actions(mp), storeT=includeT)
+
 # Dense
 struct DenseWorkspace{T <: Real}
     scratch::Vector{Int32}
@@ -82,6 +85,17 @@ struct SparseWorkspace{T <: Real}
     values_gaps::Vector{Tuple{T, T}}
     actions::Vector{T}
     delT::SparseMatrixCSC{Float64, Int64}
+    storeT::Bool
+end
+
+function SparseWorkspace(p::AbstractSparseMatrix{T}, max_actions, store) where {T <: Real}
+    max_nonzeros = maximum(map(nnz, eachcol(p)))
+    scratch = Vector{Tuple{T, T}}(undef, max_nonzeros)
+    values_gaps = Vector{Tuple{T, T}}(undef, max_nonzeros)
+    actions = Vector{T}(undef, max_actions)
+    delT =  SparseMatrixCSC{Float64, Int64}(undef, size(p)...)
+    storeT = store
+    return SparseWorkspace(scratch, values_gaps, actions, delT, storeT)
 end
 
 function SparseWorkspace(p::AbstractSparseMatrix{T}, max_actions) where {T <: Real}
@@ -90,7 +104,8 @@ function SparseWorkspace(p::AbstractSparseMatrix{T}, max_actions) where {T <: Re
     values_gaps = Vector{Tuple{T, T}}(undef, max_nonzeros)
     actions = Vector{T}(undef, max_actions)
     delT =  SparseMatrixCSC{Float64, Int64}(undef, size(p)...)
-    return SparseWorkspace(scratch, values_gaps, actions, delT)
+    storeT = false
+    return SparseWorkspace(scratch, values_gaps, actions, delT, storeT)
 end
 
 scratch(ws::SparseWorkspace) = ws.scratch
@@ -111,9 +126,10 @@ function construct_workspace(
     prob::IntervalProbabilities{R, VR, MR},
     max_actions = 1;
     threshold = 10,
+    storeT = false
 ) where {R, VR, MR <: AbstractSparseMatrix{R}}
     if Threads.nthreads() == 1 || size(gap(prob), 2) <= threshold
-        return SparseWorkspace(gap(prob), max_actions)
+        return SparseWorkspace(gap(prob), max_actions, storeT)
     else
         return ThreadedSparseWorkspace(gap(prob), max_actions)
     end

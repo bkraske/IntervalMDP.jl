@@ -53,12 +53,12 @@ function IntervalProbabilities(lower::MR, gap::MR) where {R, MR <: AbstractMatri
     sum_lower = vec(sum(lower; dims = 1))
 
     max_lower_bound = maximum(sum_lower)
-    @assert max_lower_bound <= 1 "The joint lower bound transition probability per column (max is $max_lower_bound) should be less than or equal to 1."
+    @assert max_lower_bound <= 1+eps(max_lower_bound) "The joint lower bound transition probability per column (max is $max_lower_bound) should be less than or equal to 1."
 
     sum_upper = vec(sum(lower + gap; dims = 1))
 
     max_upper_bound = minimum(sum_upper)
-    @assert max_upper_bound >= 1 "The joint upper bound transition probability per column (min is $max_upper_bound) should be greater than or equal to 1."
+    @assert max_upper_bound >= 1-eps(max_upper_bound) "The joint upper bound transition probability per column (min is $max_upper_bound) should be greater than or equal to 1."
 
     return IntervalProbabilities(lower, gap, sum_lower)
 end

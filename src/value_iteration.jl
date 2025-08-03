@@ -75,7 +75,7 @@ V, k, residual = value_iteration(problem)
 """
 function value_iteration(problem::Problem; callback = nothing, include_T = false)
     strategy_config = whichstrategyconfig(problem)
-    V, k, res, _, ws = _value_iteration!(strategy_config, problem; callback = callback)
+    V, k, res, _, ws = _value_iteration!(strategy_config, problem; callback = callback, includeT=include_T)
     if include_T
         return V, k, res, ws.delT #Will not work for dense workspaces
     else
@@ -90,6 +90,7 @@ function _value_iteration!(
     strategy_config::AbstractStrategyConfig,
     problem::Problem;
     callback = nothing,
+    includeT = false
 )
     mp = system(problem)
     spec = specification(problem)
@@ -98,7 +99,11 @@ function _value_iteration!(
     maximize = ismaximize(spec)
 
     # It is more efficient to use allocate first and reuse across iterations
-    workspace = construct_workspace(mp)
+    if isa(mp.transition_prob,IntervalProbabilities) && isa(mp.transition_prob.lower,AbstractSparseMatrix)
+        workspace = construct_workspace(mp,includeT)
+    else
+        workspace = construct_workspace(mp)
+    end
     strategy_cache = construct_strategy_cache(mp, strategy_config, strategy(problem))
 
     value_function = ValueFunction(problem)
